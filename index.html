@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Central Valley Job Market — AI Exposure</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>Central Valley Job Market</h1>
+    <span class="subtitle">Stockton-Lodi · Merced · Modesto metro areas · BLS OEWS 2024</span>
+    <div class="controls">
+      <span class="label">Color by:</span>
+      <button class="toggle active" data-metric="ai">AI Exposure</button>
+      <button class="toggle" data-metric="growth">BLS Outlook</button>
+      <button class="toggle" data-metric="wage">Median Pay</button>
+      <button class="toggle" data-metric="education">Education</button>
+    </div>
+    <div class="legend" id="legend"></div>
+  </header>
+
+  <div id="treemap"></div>
+  <div id="tooltip" class="tooltip"></div>
+
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
