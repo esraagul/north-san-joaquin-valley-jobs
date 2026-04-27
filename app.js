@@ -248,9 +248,9 @@ const OUTLOOK_TIERS = [
 ];
 
 const AI_TIERS = [
-  { label: "Low (0–3)",      min: 0, max: 3,    getC: () => exposureColor(1.5) },
-  { label: "Moderate (4–6)", min: 3, max: 6,    getC: () => exposureColor(4.5) },
-  { label: "High (7–10)",    min: 6, max: 10.1, getC: () => exposureColor(8.5) },
+  { label: "Low (0–3)",      min: 0, max: 4,    getC: () => exposureColor(1.5) },
+  { label: "Moderate (4–6)", min: 4, max: 7,    getC: () => exposureColor(4.5) },
+  { label: "High (7–10)",    min: 7, max: 10.1, getC: () => exposureColor(8.5) },
 ];
 
 const PAY_BANDS = [
