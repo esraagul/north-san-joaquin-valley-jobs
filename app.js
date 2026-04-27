@@ -1172,13 +1172,23 @@ fetch("data/occupations.json")
     });
   })
   .catch(() => {
-    document.getElementById("treemap").innerHTML = `
+    const isLocal = location.protocol === "file:";
+    document.getElementById("treemap").innerHTML = isLocal ? `
       <div id="no-data">
-        <h2>Run the pipeline first</h2>
-        <p style="color:#9ca3af;font-size:.82rem">No data found at <code style="font-size:inherit;background:none;border:none;padding:0;color:#93c5fd;">data/occupations.json</code></p>
-        <code>export ANTHROPIC_API_KEY=sk-ant-...
-pip install -r requirements.txt
-python pipeline.py</code>
+        <h2>Open via a web server, not as a local file</h2>
+        <p style="color:#9ca3af;font-size:.82rem;max-width:420px;text-align:center;line-height:1.6">
+          Browsers block file loading when you open HTML directly from your desktop.<br>
+          Run a local server instead:
+        </p>
+        <code>cd /path/to/central-valley-jobs
+python3 -m http.server 8000</code>
+        <p style="color:#9ca3af;font-size:.82rem">Then open <span style="color:#93c5fd">http://localhost:8000</span> in your browser.<br>
+        Or visit the live site on GitHub Pages.</p>
+      </div>
+    ` : `
+      <div id="no-data">
+        <h2>Data file not found</h2>
+        <p style="color:#9ca3af;font-size:.82rem">Could not load <code style="font-size:inherit;background:none;border:none;padding:0;color:#93c5fd;">data/occupations.json</code> — make sure it was pushed to the repo.</p>
       </div>
     `;
   });
