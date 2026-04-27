@@ -1007,10 +1007,11 @@ function render(data, metric) {
   const container = document.getElementById("treemap");
   container.innerHTML = "";
 
-  const W = container.clientWidth;
-  // Tall enough that boxes have breathing room — page scrolls vertically
-  const H = Math.round(W * 2.2);
-  container.style.height = H + "px";
+  const SIDE_PAD = 16; // matches #treemap padding: 0 16px in CSS
+  const W = container.clientWidth - SIDE_PAD * 2;
+  // Taller ratio → same employment = smaller individual boxes, more breathing room
+  const H = Math.round(W * 2.6);
+  container.style.height = (H + 16) + "px"; // +16 for bottom breathing room
 
   const svg = d3.select(container).append("svg").attr("width", W).attr("height", H);
 
