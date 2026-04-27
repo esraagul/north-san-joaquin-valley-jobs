@@ -595,6 +595,71 @@ function renderLegend(metric) {
   el.appendChild(s);
 }
 
+// ── OOH URL builder ──────────────────────────────────────────────────────────
+// Constructs a BLS Occupational Outlook Handbook URL from SOC code + title.
+// The OOH URL pattern is: bls.gov/ooh/{category}/{slug}.htm
+
+const OOH_CAT = {
+  "11": "management",
+  "13": "business-and-financial",
+  "15": "computer-and-information-technology",
+  "17": "architecture-and-engineering",
+  "19": "life-physical-and-social-science",
+  "21": "community-and-social-service",
+  "23": "legal",
+  "25": "education-training-and-library",
+  "27": "arts-and-design",
+  "29": "healthcare",
+  "31": "healthcare",
+  "33": "protective-service",
+  "35": "food-preparation-and-serving",
+  "37": "building-and-grounds-cleaning",
+  "39": "personal-care-and-service",
+  "41": "sales",
+  "43": "office-and-administrative-support",
+  "45": "farming-fishing-and-forestry",
+  "47": "construction-and-extraction",
+  "49": "installation-maintenance-and-repair",
+  "51": "production",
+  "53": "transportation-and-material-moving",
+};
+
+// Known overrides where OOH page name differs from SOC title
+const OOH_OVERRIDES = {
+  "11-1011": "management/top-executives",
+  "11-1021": "management/top-executives",
+  "29-1141": "healthcare/registered-nurses",
+  "29-1051": "healthcare/pharmacists",
+  "29-1071": "healthcare/physician-assistants",
+  "29-1211": "healthcare/physicians-and-surgeons",
+  "29-1171": "healthcare/nurse-anesthetists-nurse-midwives-and-nurse-practitioners",
+  "15-1252": "computer-and-information-technology/software-developers",
+  "15-1251": "computer-and-information-technology/software-developers",
+  "31-1120": "healthcare/home-health-and-personal-care-aides",
+  "31-1131": "healthcare/nursing-assistants",
+  "43-4051": "office-and-administrative-support/customer-service-representatives",
+  "43-9061": "office-and-administrative-support/general-office-clerks",
+  "35-3031": "food-preparation-and-serving/waiters-and-waitresses",
+  "53-3032": "transportation-and-material-moving/heavy-and-tractor-trailer-truck-drivers",
+  "53-3033": "transportation-and-material-moving/delivery-truck-drivers-and-driver-sales-workers",
+  "45-2092": "farming-fishing-and-forestry/agricultural-workers",
+};
+
+function oohUrl(code, title) {
+  if (OOH_OVERRIDES[code]) {
+    return `https://www.bls.gov/ooh/${OOH_OVERRIDES[code]}.htm`;
+  }
+  const cat = OOH_CAT[code.slice(0, 2)];
+  if (!cat) return null;
+  const slug = title
+    .toLowerCase()
+    .replace(/,?\s+(all other|nec|nos|except.*)$/i, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .trim()
+    .replace(/\s+/g, "-");
+  return `https://www.bls.gov/ooh/${cat}/${slug}.htm`;
+}
+
 // ── Hierarchy & enrichment ────────────────────────────────────────────────────
 
 function enrich(occupations) {
@@ -643,7 +708,9 @@ function render(data, metric) {
   container.innerHTML = "";
 
   const W = container.clientWidth;
-  const H = container.clientHeight;
+  // Tall enough that boxes have breathing room — page scrolls vertically
+  const H = Math.round(W * 2.2);
+  container.style.height = H + "px";
 
   const svg = d3.select(container).append("svg").attr("width", W).attr("height", H);
 
@@ -690,7 +757,7 @@ function render(data, metric) {
     .attr("stroke", "#111827")
     .attr("stroke-width", 0.5);
 
-  // Cell labels — white text, CSS-controlled
+  // Cell labels — matching original style: title on line 1, "growth% · Xjobs" on line 2
   svg.selectAll(".cell-text-g")
     .data(leaves)
     .join("g")
@@ -698,39 +765,41 @@ function render(data, metric) {
     .attr("pointer-events", "none")
     .each(function(d) {
       const w = d.x1 - d.x0, h = d.y1 - d.y0;
-      if (w < 44 || h < 20) return;
-      const fs = w > 130 ? 11 : w > 70 ? 10 : 9;
+      if (w < 40 || h < 18) return;
+      const fs = w > 150 ? 13 : w > 90 ? 11 : 10;
       const g = d3.select(this);
-      const hasSubline = h > 44 && w > 65;
+      const x = d.x0 + w / 2;
+
+      // Show two lines only if box is tall enough
+      const twoLine = h > 38 && w > 60;
+      const titleY = d.y0 + (twoLine ? h / 2 - 2 : h / 2 + fs * 0.35);
 
       g.append("text")
         .attr("class", "cell-text")
-        .attr("x", d.x0 + w / 2)
-        .attr("y", d.y0 + h / 2 + (hasSubline ? -4 : fs * 0.35))
+        .attr("x", x).attr("y", titleY)
         .attr("text-anchor", "middle")
         .attr("font-size", fs)
-        .text(truncate(d.data.title, w - 8, fs));
+        .text(truncate(d.data.title, w - 10, fs));
 
-      if (hasSubline) {
+      if (twoLine) {
+        const o = d.data;
+        const growthStr = o.growth_rate != null
+          ? (o.growth_rate > 0 ? "+" : "") + o.growth_rate.toFixed(0) + "%"
+          : "";
+        const jobStr = fmtJobs(o.employment) + " jobs";
+        const sub = [growthStr, jobStr].filter(Boolean).join(" · ");
         g.append("text")
           .attr("class", "cell-text")
-          .attr("x", d.x0 + w / 2)
-          .attr("y", d.y0 + h / 2 + fs + 1)
+          .attr("x", x).attr("y", titleY + fs + 2)
           .attr("text-anchor", "middle")
-          .attr("font-size", 8)
-          .attr("opacity", 0.65)
-          .text(fmtJobs(d.data.employment) + " jobs");
+          .attr("font-size", fs - 2)
+          .attr("opacity", 0.72)
+          .text(sub);
       }
     });
 
-  // Tooltip
+  // Tooltip — pure CSS hover (opacity), no D3 stroke manipulation
   cell
-    .on("mouseover", function() {
-      d3.select(this)
-        .raise()
-        .attr("stroke", "rgba(255,255,255,0.75)")
-        .attr("stroke-width", 1.5);
-    })
     .on("mousemove", (event, d) => {
       const o = d.data;
       const wage     = o.median_wage ? "$" + o.median_wage.toLocaleString() + " (regional)" : "N/A";
@@ -741,7 +810,7 @@ function render(data, metric) {
 
       tooltip.style.display = "block";
       tooltip.style.left = Math.min(event.clientX + 14, window.innerWidth - 310) + "px";
-      tooltip.style.top  = Math.max(event.clientY - 10, 8) + "px";
+      tooltip.style.top  = Math.min(event.clientY + 14, window.innerHeight - 220) + "px";
       tooltip.innerHTML = `
         <strong>${o.title}</strong>
         <div class="metric">Employment (3 metros) <span>${emp}</span></div>
@@ -751,16 +820,13 @@ function render(data, metric) {
         <div class="metric">AI Exposure Score <span>${exposure}</span></div>
         ${o.ai_rationale ? `<div class="divider"></div><div class="rationale">${o.ai_rationale}</div>` : ""}
         <div class="divider"></div>
-        <div class="rationale" style="font-style:normal;color:#60a5fa;">Click to view BLS data ↗</div>
+        <div class="rationale" style="font-style:normal;color:#60a5fa;">Click to open BLS Outlook Handbook ↗</div>
       `;
     })
-    .on("mouseleave", function() {
-      d3.select(this).attr("stroke", "#111827").attr("stroke-width", 0.5);
-      tooltip.style.display = "none";
-    })
+    .on("mouseleave", () => { tooltip.style.display = "none"; })
     .on("click", (_, d) => {
-      // BLS OES page — reliably generated from SOC code, always exists
-      if (d.data.bls_url) window.open(d.data.bls_url, "_blank");
+      const url = oohUrl(d.data.code, d.data.title);
+      window.open(url || d.data.bls_url, "_blank");
     });
 
   renderLegend(metric);
