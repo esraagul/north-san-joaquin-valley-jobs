@@ -236,14 +236,6 @@ function getColor(o, metric) {
   return "rgba(35,35,35,1)";
 }
 
-// Returns black or white depending on background luminance
-// so text is always readable on any cell color
-function cellTextColor(bgCss) {
-  const m = bgCss.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!m) return "rgba(255,255,255,0.92)";
-  const lum = (0.299 * +m[1] + 0.587 * +m[2] + 0.114 * +m[3]) / 255;
-  return lum > 0.48 ? "rgba(0,0,0,0.82)" : "rgba(255,255,255,0.92)";
-}
 
 // ── Stats bar constants ───────────────────────────────────────────────────────
 
@@ -659,27 +651,28 @@ function render(data, metric) {
     .sum(d => d.employment || 0)
     .sort((a, b) => b.value - a.value);
 
+  // Tighter padding = more space for actual boxes (matches original layout feel)
   d3.treemap()
     .size([W, H])
-    .paddingOuter(3)
+    .paddingOuter(1)
     .paddingInner(1)
-    .paddingTop(18)
+    .paddingTop(14)
     .round(true)(root);
 
   const tooltip = document.getElementById("tooltip");
 
-  // Group labels
+  // Group labels — overlaid at top of each group section
   svg.selectAll(".group-label")
     .data(root.children || [])
     .join("text")
     .attr("class", "group-label")
     .attr("x", d => d.x0 + 4)
-    .attr("y", d => d.y0 + 12)
+    .attr("y", d => d.y0 + 10)
     .text(d => {
       const w = d.x1 - d.x0;
-      if (w < 80) return "";
+      if (w < 60) return "";
       const lbl = d.data.name.toUpperCase();
-      const max = Math.floor(w / 6.5);
+      const max = Math.floor(w / 6);
       return lbl.length > max ? lbl.slice(0, Math.max(max - 1, 4)) + "…" : lbl;
     });
 
@@ -697,7 +690,7 @@ function render(data, metric) {
     .attr("stroke", "#111827")
     .attr("stroke-width", 0.5);
 
-  // Cell labels — color adapts to background so text stays readable
+  // Cell labels — white text, CSS-controlled
   svg.selectAll(".cell-text-g")
     .data(leaves)
     .join("g")
@@ -705,38 +698,39 @@ function render(data, metric) {
     .attr("pointer-events", "none")
     .each(function(d) {
       const w = d.x1 - d.x0, h = d.y1 - d.y0;
-      if (w < 50 || h < 22) return;
-      const fs = w > 130 ? 11 : w > 80 ? 10 : 9;
-      const bg = getColor(d.data, metric);
-      const fg = cellTextColor(bg);
+      if (w < 44 || h < 20) return;
+      const fs = w > 130 ? 11 : w > 70 ? 10 : 9;
       const g = d3.select(this);
+      const hasSubline = h > 44 && w > 65;
 
-      // Title line
       g.append("text")
         .attr("class", "cell-text")
         .attr("x", d.x0 + w / 2)
-        .attr("y", d.y0 + h / 2 + (h > 40 ? -3 : fs * 0.38))
+        .attr("y", d.y0 + h / 2 + (hasSubline ? -4 : fs * 0.35))
         .attr("text-anchor", "middle")
         .attr("font-size", fs)
-        .attr("fill", fg)
-        .text(truncate(d.data.title, w - 10, fs));
+        .text(truncate(d.data.title, w - 8, fs));
 
-      // Employment sub-line (only if enough space)
-      if (h > 42 && w > 70) {
+      if (hasSubline) {
         g.append("text")
           .attr("class", "cell-text")
           .attr("x", d.x0 + w / 2)
-          .attr("y", d.y0 + h / 2 + fs + 2)
+          .attr("y", d.y0 + h / 2 + fs + 1)
           .attr("text-anchor", "middle")
           .attr("font-size", 8)
-          .attr("fill", fg)
-          .attr("opacity", 0.7)
+          .attr("opacity", 0.65)
           .text(fmtJobs(d.data.employment) + " jobs");
       }
     });
 
-  // Tooltip + click
+  // Tooltip
   cell
+    .on("mouseover", function() {
+      d3.select(this)
+        .raise()
+        .attr("stroke", "rgba(255,255,255,0.75)")
+        .attr("stroke-width", 1.5);
+    })
     .on("mousemove", (event, d) => {
       const o = d.data;
       const wage     = o.median_wage ? "$" + o.median_wage.toLocaleString() + " (regional)" : "N/A";
@@ -757,13 +751,16 @@ function render(data, metric) {
         <div class="metric">AI Exposure Score <span>${exposure}</span></div>
         ${o.ai_rationale ? `<div class="divider"></div><div class="rationale">${o.ai_rationale}</div>` : ""}
         <div class="divider"></div>
-        <div class="rationale" style="font-style:normal;color:#60a5fa;">Click to view on O*NET ↗</div>
+        <div class="rationale" style="font-style:normal;color:#60a5fa;">Click to view BLS data ↗</div>
       `;
     })
-    .on("mouseleave", () => { tooltip.style.display = "none"; })
+    .on("mouseleave", function() {
+      d3.select(this).attr("stroke", "#111827").attr("stroke-width", 0.5);
+      tooltip.style.display = "none";
+    })
     .on("click", (_, d) => {
-      // O*NET uses the SOC code with .00 suffix — always works with any SOC code
-      window.open(`https://www.onetonline.org/link/summary/${d.data.code}.00`, "_blank");
+      // BLS OES page — reliably generated from SOC code, always exists
+      if (d.data.bls_url) window.open(d.data.bls_url, "_blank");
     });
 
   renderLegend(metric);
