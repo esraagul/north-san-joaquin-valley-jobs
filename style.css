@@ -130,6 +130,108 @@ h1 {
   flex-shrink: 0;
 }
 
+/* ── Stats Bar ───────────────────────────────────────────────────────────── */
+
+#stats-bar {
+  display: flex;
+  align-items: stretch;
+  padding: 6px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+  flex-shrink: 0;
+  overflow-x: auto;
+  min-height: 66px;
+  gap: 0;
+  scrollbar-width: none;
+}
+#stats-bar::-webkit-scrollbar { display: none; }
+
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 13px;
+  flex-shrink: 0;
+}
+.stat-block:first-child { padding-left: 0; }
+
+.stat-sep {
+  width: 1px;
+  background: var(--border);
+  flex-shrink: 0;
+  align-self: stretch;
+  margin: 5px 0;
+}
+
+.stat-label {
+  font-size: 0.57rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+  white-space: nowrap;
+  margin-bottom: 2px;
+}
+
+.stat-main {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.stat-sub {
+  font-size: 0.59rem;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.stat-hist { min-width: 72px; }
+.hist-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 32px;
+  margin-top: 3px;
+}
+.hist-bar { flex: 1; border-radius: 2px 2px 0 0; min-height: 2px; }
+
+.stat-tiers { min-width: 195px; }
+.tier-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.63rem;
+  line-height: 1.72;
+}
+.tier-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  flex-shrink: 0;
+  font-style: normal;
+}
+.tier-nm { color: var(--muted); flex: 1; white-space: nowrap; }
+.tier-ct { color: var(--text); font-weight: 600; min-width: 30px; text-align: right; font-size: 0.63rem; }
+.tier-pc { color: var(--muted); min-width: 26px; text-align: right; font-size: 0.63rem; }
+
+.stat-cross { min-width: 148px; }
+.cross-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.62rem;
+  line-height: 1.72;
+}
+.cross-nm { color: var(--muted); min-width: 62px; white-space: nowrap; font-size: 0.6rem; }
+.cross-bar { height: 5px; border-radius: 2px; flex-shrink: 0; }
+.cross-vl { color: var(--text); font-weight: 600; min-width: 32px; text-align: right; font-size: 0.61rem; }
+
+/* ── Treemap ─────────────────────────────────────────────────────────────── */
+
 #treemap {
   flex: 1;
   overflow: hidden;
