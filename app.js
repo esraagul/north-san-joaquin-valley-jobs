@@ -236,6 +236,15 @@ function getColor(o, metric) {
   return "rgba(35,35,35,1)";
 }
 
+// Returns black or white depending on background luminance
+// so text is always readable on any cell color
+function cellTextColor(bgCss) {
+  const m = bgCss.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!m) return "rgba(255,255,255,0.92)";
+  const lum = (0.299 * +m[1] + 0.587 * +m[2] + 0.114 * +m[3]) / 255;
+  return lum > 0.48 ? "rgba(0,0,0,0.82)" : "rgba(255,255,255,0.92)";
+}
+
 // ── Stats bar constants ───────────────────────────────────────────────────────
 
 const OUTLOOK_TIERS = [
@@ -327,15 +336,36 @@ function mkSep() {
   const d = document.createElement("div"); d.className = "stat-sep"; return d;
 }
 
+// Short label shown under each histogram bar
+function tierShortLabel(t) {
+  const l = t.label || "";
+  if (l.startsWith("Declin"))     return "Dec";
+  if (l.startsWith("Slow"))       return "Slow";
+  if (l.startsWith("Average"))    return "Avg";
+  if (l.startsWith("Fast"))       return "Fast";
+  if (l.startsWith("Much"))       return "15%+";
+  if (l.startsWith("Low"))        return "Low";
+  if (l.startsWith("Moderate"))   return "Mod";
+  if (l.startsWith("High"))       return "High";
+  // Pay bands: use label directly (already short)
+  return l.replace(/[$K\s]/g, "").slice(0, 4);
+}
+
 function mkHist(label, tiers) {
   const max = Math.max(...tiers.map(t => t.jobs || 0), 1);
-  const bars = tiers.map(t => {
-    const h = Math.max(2, Math.round((t.jobs || 0) / max * 30));
-    return `<div class="hist-bar" style="height:${h}px;background:${t.getC ? t.getC() : "#444"}"></div>`;
+  const cols = tiers.map(t => {
+    const h = Math.max(2, Math.round((t.jobs || 0) / max * 28));
+    const pct = max > 0 ? Math.round((t.jobs || 0) / max * 100) : 0;
+    const c = t.getC ? t.getC() : "#444";
+    const sl = tierShortLabel(t);
+    return `<div class="hist-col" title="${t.label}: ${fmtJobs(t.jobs)} jobs">
+      <div class="hist-bar" style="height:${h}px;background:${c}"></div>
+      <div class="hist-lbl">${sl}</div>
+    </div>`;
   }).join("");
   const d = document.createElement("div");
   d.className = "stat-block stat-hist";
-  d.innerHTML = `<div class="stat-label">${label}</div><div class="hist-bars">${bars}</div>`;
+  d.innerHTML = `<div class="stat-label">${label}</div><div class="hist-bars">${cols}</div>`;
   return d;
 }
 
@@ -358,16 +388,21 @@ function mkTiers(label, tiers, total) {
 }
 
 function mkCross(label, bands, valFmt, colorFn) {
-  const max = Math.max(...bands.map(b => b.jobs || 0), 1);
+  // Bar width = proportional to absolute value of avgVal (shows magnitude)
+  // Bar color = metric color (shows direction: green=good, red=bad)
+  const withJobs = bands.filter(b => b.jobs > 0 && b.avgVal != null);
+  const maxAbs = Math.max(...withJobs.map(b => Math.abs(b.avgVal)), 0.01);
   let rows = `<div class="stat-label">${label}</div>`;
   for (const b of bands) {
     if (!b.jobs) continue;
-    const bw = Math.max(3, Math.round(b.jobs / max * 48));
-    const c = colorFn ? colorFn(b.avgVal) : "#555";
-    rows += `<div class="cross-row">
+    const val = b.avgVal;
+    const bw = val != null ? Math.max(3, Math.round(Math.abs(val) / maxAbs * 52)) : 0;
+    const c = colorFn ? colorFn(val) : "#555";
+    const jobPct = "(" + fmtJobs(b.jobs) + " jobs)";
+    rows += `<div class="cross-row" title="${b.label}: ${valFmt(val)} · ${jobPct}">
       <span class="cross-nm">${b.label}</span>
       <span class="cross-bar" style="width:${bw}px;background:${c}"></span>
-      <b class="cross-vl">${valFmt(b.avgVal)}</b>
+      <b class="cross-vl">${valFmt(val)}</b>
     </div>`;
   }
   const d = document.createElement("div");
@@ -662,7 +697,7 @@ function render(data, metric) {
     .attr("stroke", "#111827")
     .attr("stroke-width", 0.5);
 
-  // Cell labels
+  // Cell labels — color adapts to background so text stays readable
   svg.selectAll(".cell-text-g")
     .data(leaves)
     .join("g")
@@ -670,15 +705,34 @@ function render(data, metric) {
     .attr("pointer-events", "none")
     .each(function(d) {
       const w = d.x1 - d.x0, h = d.y1 - d.y0;
-      if (w < 45 || h < 25) return;
-      const fs = w > 120 ? 11 : 9;
-      d3.select(this).append("text")
+      if (w < 50 || h < 22) return;
+      const fs = w > 130 ? 11 : w > 80 ? 10 : 9;
+      const bg = getColor(d.data, metric);
+      const fg = cellTextColor(bg);
+      const g = d3.select(this);
+
+      // Title line
+      g.append("text")
         .attr("class", "cell-text")
         .attr("x", d.x0 + w / 2)
-        .attr("y", d.y0 + h / 2 + fs * 0.38)
+        .attr("y", d.y0 + h / 2 + (h > 40 ? -3 : fs * 0.38))
         .attr("text-anchor", "middle")
         .attr("font-size", fs)
-        .text(truncate(d.data.title, w - 8, fs));
+        .attr("fill", fg)
+        .text(truncate(d.data.title, w - 10, fs));
+
+      // Employment sub-line (only if enough space)
+      if (h > 42 && w > 70) {
+        g.append("text")
+          .attr("class", "cell-text")
+          .attr("x", d.x0 + w / 2)
+          .attr("y", d.y0 + h / 2 + fs + 2)
+          .attr("text-anchor", "middle")
+          .attr("font-size", 8)
+          .attr("fill", fg)
+          .attr("opacity", 0.7)
+          .text(fmtJobs(d.data.employment) + " jobs");
+      }
     });
 
   // Tooltip + click
