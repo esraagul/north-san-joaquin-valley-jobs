@@ -788,11 +788,20 @@ function render(data, metric) {
 
       if (twoLine) {
         const o = d.data;
-        const growthStr = o.growth_rate != null
-          ? (o.growth_rate > 0 ? "+" : "") + o.growth_rate.toFixed(0) + "%"
-          : "";
+        let metricStr = "";
+        if (metric === "ai") {
+          metricStr = o.ai_exposure != null ? o.ai_exposure.toFixed(0) + "/10" : "";
+        } else if (metric === "growth") {
+          metricStr = o.growth_rate != null
+            ? (o.growth_rate > 0 ? "+" : "") + o.growth_rate.toFixed(0) + "%"
+            : "";
+        } else if (metric === "wage") {
+          metricStr = o.median_wage != null ? fmtWage(o.median_wage) : "";
+        } else if (metric === "education") {
+          metricStr = o.education ? (EDU_SHORT[o.education] || o.education) : "";
+        }
         const jobStr = fmtJobs(o.employment) + " jobs";
-        const sub = [growthStr, jobStr].filter(Boolean).join(" · ");
+        const sub = [metricStr, jobStr].filter(Boolean).join(" · ");
         g.append("text")
           .attr("class", "cell-text")
           .attr("x", x).attr("y", titleY + fs + 2)
