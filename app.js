@@ -1007,11 +1007,11 @@ function render(data, metric) {
   const container = document.getElementById("treemap");
   container.innerHTML = "";
 
-  const SIDE_PAD = 16; // matches #treemap padding: 0 16px in CSS
+  const SIDE_PAD = 20; // matches #treemap padding: 0 20px in CSS
   const W = container.clientWidth - SIDE_PAD * 2;
-  // Taller ratio → same employment = smaller individual boxes, more breathing room
-  const H = Math.round(W * 2.6);
-  container.style.height = (H + 16) + "px"; // +16 for bottom breathing room
+  // Higher ratio → smaller individual boxes, more breathing room (we have ~500 occupations vs original ~200)
+  const H = Math.round(W * 3.4);
+  container.style.height = (H + 24) + "px"; // +24 for bottom breathing room
 
   const svg = d3.select(container).append("svg").attr("width", W).attr("height", H);
 
@@ -1022,9 +1022,9 @@ function render(data, metric) {
   // Tighter padding = more space for actual boxes (matches original layout feel)
   d3.treemap()
     .size([W, H])
-    .paddingOuter(5)
-    .paddingInner(1)
-    .paddingTop(14)
+    .paddingOuter(8)
+    .paddingInner(2)
+    .paddingTop(16)
     .round(true)(root);
 
   const tooltip = document.getElementById("tooltip");
