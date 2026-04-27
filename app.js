@@ -579,10 +579,15 @@ function renderLegend(metric) {
 
     const wrap = document.createElement("span");
     wrap.style.cssText = "display:flex;align-items:center;gap:5px;";
-    wrap.innerHTML = `<span class="legend-label">${c.low}</span>`;
+    const lowLbl = document.createElement("span");
+    lowLbl.className = "legend-label";
+    lowLbl.textContent = c.low;
+    wrap.appendChild(lowLbl);
     wrap.appendChild(canvas);
-    wrap.innerHTML += `<span class="legend-label">${c.high}</span>`;
-    wrap.insertBefore(canvas, wrap.children[1]);
+    const highLbl = document.createElement("span");
+    highLbl.className = "legend-label";
+    highLbl.textContent = c.high;
+    wrap.appendChild(highLbl);
     el.appendChild(wrap);
   }
 
@@ -721,7 +726,7 @@ function render(data, metric) {
   // Tighter padding = more space for actual boxes (matches original layout feel)
   d3.treemap()
     .size([W, H])
-    .paddingOuter(1)
+    .paddingOuter(5)
     .paddingInner(1)
     .paddingTop(14)
     .round(true)(root);
