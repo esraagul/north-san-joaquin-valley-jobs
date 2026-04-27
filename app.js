@@ -511,7 +511,7 @@ function renderStats(enriched, metric) {
   } else if (metric === "education") {
     const eduGroups = byEdu(enriched).sort((a, b) => b.jobs - a.jobs);
     const top = eduGroups[0];
-    ap(mkStat("TOP EDU LEVEL", top ? (EDU_SHORT[top.level] || top.level) : "—", eduColor(top?.level), "by employment"));
+    ap(mkStat("TOP EDU LEVEL", top ? (EDU_SHORT[top.level] || top.level) : "—", eduColor(top ? top.level : null), "by employment"));
     ap(mkSep());
 
     const eduTiers = byEdu(enriched).map(b => ({ ...b, getC: () => eduColor(b.level) }));
@@ -969,8 +969,8 @@ function enrich(occupations) {
       const ep = getEP(o.code);
       return {
         ...o,
-        growth_rate: ep?.growth    ?? o.growth_rate,
-        education:   ep?.education ?? o.education,
+        growth_rate: (ep && ep.growth    != null) ? ep.growth    : o.growth_rate,
+        education:   (ep && ep.education != null) ? ep.education : o.education,
       };
     });
 }
