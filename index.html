@@ -5,9 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>North San Joaquin Valley Job Market — AI Exposure</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
   <header>
@@ -26,11 +24,15 @@
   </header>
 
   <div id="stats-bar"></div>
-  <div id="treemap"></div>
+  <div id="treemap">
+    <div id="loading">
+      <div class="spinner"></div>
+      <span>Loading data…</span>
+    </div>
+  </div>
   <div id="tooltip" class="tooltip"></div>
 
-  <!-- D3 loaded locally to avoid CDN blocking by Edge tracking protection -->
   <script src="d3.v7.min.js"></script>
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
