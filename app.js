@@ -562,7 +562,7 @@ function renderLegend(metric) {
   } else {
     // Build gradient using actual color functions for accuracy
     const cfg = {
-      ai:     { fn: t => exposureColor(t * 10), low: "Safe (0)", high: "High Risk (10)" },
+      ai:     { fn: t => exposureColor(t * 10), low: "Low Exposure (0)", high: "High Exposure (10)" },
       growth: { fn: t => outlookColor(-12 + t * 24), low: "Declining", high: "Growing fast" },
       wage:   { fn: t => payColor(25000 * Math.pow(10, t * Math.log10(250000 / 25000))), low: "< $25K", high: "$250K+" },
     };
