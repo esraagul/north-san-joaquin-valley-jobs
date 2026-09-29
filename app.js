@@ -1388,4 +1388,21 @@ function render(data, metric) {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(function() { render(allData, currentMetric); }, 150);
   });
+
+  // About / Methodology modal
+  var aboutBtn = document.getElementById("about-btn");
+  var aboutModal = document.getElementById("about-modal");
+  var aboutClose = document.getElementById("about-close");
+  function openAbout() { aboutModal.hidden = false; }
+  function closeAbout() { aboutModal.hidden = true; }
+  if (aboutBtn && aboutModal && aboutClose) {
+    aboutBtn.addEventListener("click", openAbout);
+    aboutClose.addEventListener("click", closeAbout);
+    aboutModal.addEventListener("click", function(e) {
+      if (e.target === aboutModal) closeAbout();
+    });
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && !aboutModal.hidden) closeAbout();
+    });
+  }
 })();
