@@ -382,7 +382,7 @@ h1 {
 #page-footer {
   flex-shrink: 0;
   padding: 10px 20px 16px;
-  font-size: 0.68rem;
+  font-size: 0.85rem;
   color: var(--muted);
   text-align: center;
 }
