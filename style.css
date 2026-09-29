@@ -379,6 +379,14 @@ h1 {
   padding: 0 20px;
 }
 
+#page-footer {
+  flex-shrink: 0;
+  padding: 10px 20px 16px;
+  font-size: 0.68rem;
+  color: var(--muted);
+  text-align: center;
+}
+
 #treemap svg {
   display: block;
 }
